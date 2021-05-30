@@ -107,7 +107,7 @@ function App() {
     <div className="container">
       <div className="video-container">
         <div className="presenter-video-container">
-          <video id="presenter-video" autoplay="true" muted="muted"></video>
+          <video id="presenter-video" autoplay="true" muted="true" controls></video>
         </div>
 
         <video id="receiver-video" autoplay="true"></video>
