@@ -14,7 +14,7 @@ const config = {
 const constraints = {
   video: { facingMode: "user" },
   // Uncomment to enable audio
-  // audio: true,
+   audio: true,
 };
 
 function App() {
