@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
         (userId) => {
           socket.emit("receiver", userId);
         },
-        5000,
+        2000,
         userId
       );
     }
