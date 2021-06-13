@@ -1,116 +1,60 @@
 import React, { useEffect, useState } from "react";
-import { io } from "socket.io-client";
-
+import { Button, Input } from "antd";
+import { useHistory } from "react-router-dom";
+import { LoginOutlined, PhoneOutlined } from "@ant-design/icons";
+import { NEW_CALL } from "./constant";
 import "./App.css";
 
-const peerConnections = {};
-const config = {
-  iceServers: [
-    {
-      urls: ["stun:stun.l.google.com:19302"],
-    },
-  ],
-};
-const constraints = {
-  video: { facingMode: "user" },
-  // Uncomment to enable audio
-   audio: true,
-};
-
 function App() {
-  const [userId] = useState(`${new Date().getTime()}`);
+  const history = useHistory();
+  const [callCode, setCallCode] = useState("");
 
-  useEffect(() => {
-    const socket = io(window.location.origin, {
-      query: `userId=${userId}`,
-    });
+  useEffect(() => {}, []);
 
-    const presenderVideo = document.getElementById("presenter-video");
-    const receiverVideo = document.getElementById("receiver-video");
+  const handleJoinClick = () => {
+    if (callCode.length > 0) {
+      history.push(`/call/${callCode}`);
+    }
+  };
 
-    navigator.mediaDevices
-      .getUserMedia(constraints)
-      .then((stream) => {
-        presenderVideo.srcObject = stream;
+  const handleNewCallClick = () => history.push(`/call/${NEW_CALL}`);
 
-        socket.on("receiver", (receiverId) => {
-          if (receiverId === userId) {
-            return;
-          }
-          // CREATE RECEIVER RTC OBJECT
-          const peerConnection = new RTCPeerConnection(config);
-          peerConnections[receiverId] = peerConnection;
-
-          // ADD CURRENT USER STREAM TO RECEIVER PEER OBJECT
-          stream
-            .getTracks()
-            .forEach((track) => peerConnection.addTrack(track, stream));
-
-          // HANDLE INTERNET CONNECTIVITY CANDIDATES
-          peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-              socket.emit("candidate", receiverId, event.candidate);
-            }
-          };
-
-          // SEND OFFER TO RECEIVER
-          peerConnection
-            .createOffer()
-            .then((sdp) => peerConnection.setLocalDescription(sdp))
-            .then(() => {
-              socket.emit("offer", receiverId, peerConnection.localDescription);
-            });
-        });
-
-        // RECEIVER DESCRIPTION
-        socket.on("answer", (receiverId, description) => {
-          if (peerConnections[receiverId] && description) {
-            peerConnections[receiverId].setRemoteDescription(description);
-          }
-        });
-      })
-      .catch((error) => console.error(error));
-
-    //  COMMON FOR BOTH SENDER AND RECEIVER
-    socket.on("candidate", (id, candidate) => {
-      if (peerConnections[id] && candidate) {
-        peerConnections[id].addIceCandidate(new RTCIceCandidate(candidate));
-      }
-    });
-
-    // HANDLE PRESENTER OFFER
-    socket.on("offer", (presenterId, description) => {
-      const peerConnection = new RTCPeerConnection(config);
-      peerConnections[presenterId] = peerConnection;
-      peerConnection
-        .setRemoteDescription(description)
-        .then(() => peerConnection.createAnswer())
-        .then((sdp) => peerConnection.setLocalDescription(sdp))
-        .then(() => {
-          socket.emit("answer", presenterId, peerConnection.localDescription);
-        });
-
-      // SET STREAM TO RECEIVER VIDEO TRACK
-      peerConnection.ontrack = (event) => {
-        receiverVideo.srcObject = event.streams[0];
-      };
-
-      peerConnection.onicecandidate = (event) => {
-        if (event.candidate) {
-          socket.emit("candidate", presenterId, event.candidate);
-        }
-      };
-    });
-  }, []);
+  const onInputChange = (event) => setCallCode(event.target.value);
 
   return (
-    <div className="container">
-      <div className="video-container">
-        <div className="presenter-video-container">
-          <video id="presenter-video" autoplay="true" muted="true" controls></video>
+    <div className="app-container">
+      <div className="container">
+        <div className="header">
+          <label>V-Connect</label>
         </div>
-
-        <video id="receiver-video" autoplay="true"></video>
+        <div className="content">
+          <Button
+            className="new-call-btn"
+            type="primary"
+            size="large"
+            icon={<PhoneOutlined />}
+            onClick={handleNewCallClick}
+          >
+            NEW CALL
+          </Button>
+          <label className="or-label">OR</label>
+          <div className="join-container">
+            <Input
+              size="large"
+              placeholder="ENTER CODE"
+              prefix={<LoginOutlined />}
+              onChange={onInputChange}
+            />
+            <Button
+              className="enter-call-btn"
+              type="primary"
+              size="large"
+              onClick={handleJoinClick}
+            >
+              JOIN
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

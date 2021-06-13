@@ -8,7 +8,10 @@ const io = require("socket.io")(server, {
     origin: "*",
   },
 });
+var passwordGenerator = require("generate-otp");
+
 const socketObj = {};
+const connectionObj = {};
 
 // Tell Express to serve up the public folder and everything inside of it
 // This done for heroku deployment
@@ -36,22 +39,46 @@ app.use(express.json());
 
 io.on("connection", (socket) => {
   const currentUserId = socket.handshake.query["userId"];
-  console.log(new Date().toISOString() + ": Socket Connected ", currentUserId);
+  const meetId = socket.handshake.query["meetId"];
+  let generatedMeetId = null;
+  console.log(
+    new Date().toISOString() + ": Socket Connected ",
+    currentUserId,
+    meetId
+  );
   socketObj[currentUserId] = socket;
-  // Trigger to recevie Video
-  Object.keys(socketObj).forEach((userId) => {
-    if (currentUserId !== userId) {
-      const otherSocket = socketObj[userId];
-      otherSocket.emit("receiver", currentUserId);
-      setTimeout(
-        (userId) => {
-          socket.emit("receiver", userId);
-        },
-        5000,
-        userId
-      );
+
+  console.log(connectionObj, meetId);
+
+  if (!meetId) {
+    generatedMeetId = passwordGenerator.generate(4);
+    socket.emit("meetId", generatedMeetId);
+    console.log(
+      new Date().toISOString() + ": Generated MeetId ",
+      currentUserId,
+      generatedMeetId
+    );
+    connectionObj[generatedMeetId] = { [currentUserId]: true };
+  } else if (
+    connectionObj[meetId] &&
+    Object.keys(connectionObj[meetId]).length === 1
+  ) {
+    const initUserId = Object.keys(connectionObj[meetId])[0];
+    const initUserSocket = socketObj[initUserId];
+    connectionObj[meetId] = { ...connectionObj[meetId], [currentUserId]: true };
+    setTimeout(
+      (initUserId) => {
+        socket.emit("receiver", initUserId);
+      },
+      2000,
+      initUserId
+    );
+    if (initUserSocket) {
+      initUserSocket.emit("receiver", currentUserId);
     }
-  });
+  } else {
+    socket.emit("invalidMeet");
+  }
 
   socket.on("offer", (receiverId, localDescription) => {
     if (socketObj[receiverId]) {
@@ -75,11 +102,27 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    const isRemoved = delete socketObj[currentUserId];
+    const cleanup = (meetId) => {
+      if (
+        connectionObj[meetId] &&
+        Object.keys(connectionObj[meetId]).length > 0
+      ) {
+        Object.keys(connectionObj[meetId]).forEach((userId) => {
+          if (userId !== currentUserId && socketObj[userId]) {
+            socketObj[userId].emit("meetEndByPartner");
+          }
+          delete socketObj[userId];
+        });
+        delete connectionObj[meetId];
+      }
+    };
+    cleanup(meetId);
+    cleanup(generatedMeetId);
+
+    delete socketObj[currentUserId];
     console.log(
       new Date().toISOString() + ": Socket Disconnected ",
-      currentUserId,
-      isRemoved
+      currentUserId
     );
   });
 });

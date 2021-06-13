@@ -1,34 +1,73 @@
-.video-container {
+.app-container {
   display: flex;
-  justify-content: space-around;
-  align-items: center;
-  height: 100vh;
-  flex-wrap: wrap;
+  justify-content: center;
+  background-image: url("./assets/bg.jpg");
 }
 
 .container {
-  background-color: #060606;
+  min-width: 30%;
+  text-align: center;
+  padding: 16px;
+  height: 100vh;
 }
 
-#presenter-video {
-  width: 100%;
-  height: 100%;
-  box-shadow: 0px 0px 11px 9px #fffefe;
-}
-
-.presenter-video-container {
-  position: fixed;
-  right: 9px;
-  bottom: 9px;
-  width: 30%;
+.header {
   height: 30%;
+  font-size: 40px;
+  font-family: auto;
 }
 
-#receiver-video {
-  height: 100%;
-  width: 100%;
+.content {
+  height: 70%;
+  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-video {
-  object-fit: cover;
+.or-label,
+.header {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.join-container {
+  display: flex;
+  gap: 8px;
+}
+
+.ant-input:focus,
+.ant-input:hover {
+  border-color: #a33eb8 !important;
+  box-shadow: none !important;
+}
+
+.ant-btn {
+  width: fit-content;
+  background: #873eb4 !important;
+  border-color: #873eb4 !important;
+}
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: #a33eb8 !important;
+  border-color: #a33eb8 !important;
+}
+
+.ant-alert-info {
+  background-color: #a23eb8 !important;
+  border: 1px solid #a23eb8 !important;
+}
+.ant-alert-message,
+.ant-spin-spinning {
+  color: #ffffff !important;
+}
+
+
+@media only screen and (max-width: 600px) {
+  .container {
+    min-width: 100%;
+  }
+  .ant-drawer-content-wrapper {
+    width: 100% !important;
+  }
 }
